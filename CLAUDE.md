@@ -26,6 +26,11 @@ The general rules in `~/projects/CLAUDE.md` apply; this file adds specifics.
 - Configured installs without a password are routed to
   `CreatePasswordScreen` (upgrade path). Background isolates never read it.
 - Forgotten password → clear app data. No backend recovery by design.
+- **Log → Restore from server** (1.0.7) refills the log after a reinstall via
+  signed `POST /api/sms/history`, served by the UpeoRetail core app
+  (`upeoretail/api/sms_gateway.py`, `DeviceMessageHistory`). Restored rows are
+  stored as `synced`, so they are never re-sent. The string-to-sign is
+  `history\ndevice_id\nnonce\nsent_at\ndays\nlimit`; change both sides together.
 
 ## Test traps
 
