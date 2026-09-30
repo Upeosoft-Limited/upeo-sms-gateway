@@ -27,6 +27,20 @@ class SendResult {
   const SendResult(this.outcome, this.detail);
 }
 
+/// Outcome of a history request: the raw server rows, or why there are none.
+class HistoryFetch {
+  const HistoryFetch.ok(this.messages)
+      : outcome = SendOutcome.success,
+        detail = 'ok';
+  const HistoryFetch.failed(this.outcome, this.detail) : messages = const [];
+
+  final SendOutcome outcome;
+  final String detail;
+  final List<Map<String, dynamic>> messages;
+
+  bool get isOk => outcome == SendOutcome.success;
+}
+
 /// Signs payloads and talks to the backend over HTTPS. The [AppConfig.secretKey]
 /// is used only to compute the HMAC; it is never sent or logged.
 class ApiClient {
@@ -144,6 +158,49 @@ class ApiClient {
       return SendResult(SendOutcome.transient, _dioMsg(e));
     } catch (e) {
       return SendResult(SendOutcome.transient, e.toString());
+    }
+  }
+
+  /// Signed request for the messages this device already delivered, newest
+  /// first, so a reinstalled app can rebuild its log.
+  Future<HistoryFetch> fetchHistory({required int days, required int limit}) async {
+    _assertSecureUrl();
+    final nonce = _uuid.v4();
+    final sentAt = TimeUtils.nowEat();
+    final signature = Canonical.sign(
+      stringToSign: Canonical.historyStringToSign(
+        deviceId: _cfg.deviceId,
+        nonce: nonce,
+        sentAt: sentAt,
+        days: days,
+        limit: limit,
+      ),
+      secret: _cfg.secretKey,
+    );
+    try {
+      final res = await _dio.post(K.historyPath, data: {
+        'device_id': _cfg.deviceId,
+        'nonce': nonce,
+        'sent_at': sentAt,
+        'days': days,
+        'limit': limit,
+        'signature': signature,
+      });
+      final code = res.statusCode ?? 0;
+      final data = res.data;
+      if (code >= 200 && code < 300 && data is Map && data['messages'] is List) {
+        final messages = (data['messages'] as List)
+            .whereType<Map>()
+            .map((m) => m.map((k, v) => MapEntry(k.toString(), v)))
+            .toList();
+        return HistoryFetch.ok(messages);
+      }
+      if (code >= 400 && code < 500) {
+        return HistoryFetch.failed(SendOutcome.permanent, 'HTTP $code: ${_msg(data)}');
+      }
+      return HistoryFetch.failed(SendOutcome.transient, 'HTTP $code');
+    } on DioException catch (e) {
+      return HistoryFetch.failed(SendOutcome.transient, _dioMsg(e));
     }
   }
 

@@ -57,6 +57,19 @@ class Canonical {
     return [deviceId, nonce, sentAt].join('\n');
   }
 
+  /// The string signed for a history request:
+  /// `history\ndevice_id\nnonce\nsent_at\ndays\nlimit`. The leading `history`
+  /// stops a heartbeat signature being replayed against this endpoint.
+  static String historyStringToSign({
+    required String deviceId,
+    required String nonce,
+    required String sentAt,
+    required int days,
+    required int limit,
+  }) {
+    return ['history', deviceId, nonce, sentAt, '$days', '$limit'].join('\n');
+  }
+
   /// HMAC-SHA256 over [stringToSign] with [secret], lowercase hex.
   static String sign({required String stringToSign, required String secret}) {
     final hmac = Hmac(sha256, utf8.encode(secret));

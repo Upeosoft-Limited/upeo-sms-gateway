@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/sms_message.dart';
 import '../../state/dashboard_controller.dart';
 import '../format.dart';
+import '../widgets/restore_history_button.dart';
 
 class LogsScreen extends ConsumerWidget {
   const LogsScreen({super.key});
@@ -15,6 +16,7 @@ class LogsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('SMS Log'),
         actions: [
+          const RestoreHistoryButton.icon(),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => ref.read(logsControllerProvider.notifier).refresh(),
@@ -29,10 +31,18 @@ class LogsScreen extends ConsumerWidget {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(32),
-                child: Text(
-                  'No allowlisted messages yet.\n'
-                  'Only SMS matching your sender allowlist are stored here.',
-                  textAlign: TextAlign.center,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'No allowlisted messages yet.\n'
+                      'Only SMS matching your sender allowlist are stored here.',
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 16),
+                    // After a reinstall the log starts empty; offer the way back.
+                    RestoreHistoryButton(),
+                  ],
                 ),
               ),
             );

@@ -12,6 +12,10 @@ class K {
   static const String incomingPath = '/api/sms/incoming';
   static const String heartbeatPath = '/api/sms/heartbeat';
   static const String versionPath = '/api/app/version';
+  static const String historyPath = '/api/sms/history';
+
+  // Most messages one "Restore from server" asks for (the server caps it too).
+  static const int historyLimit = 500;
 
   // ----- Defaults -----
   static const List<String> defaultAllowlist = ['MPESA'];
