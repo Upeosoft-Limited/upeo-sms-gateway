@@ -8,6 +8,7 @@ import '../../core/app_log.dart';
 import '../../state/dashboard_controller.dart';
 import '../../state/gateway_actions.dart';
 import '../../state/providers.dart';
+import '../widgets/change_password_dialog.dart';
 import '../widgets/config_form.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -29,6 +30,12 @@ class SettingsScreen extends ConsumerWidget {
             child: ConfigForm(),
           ),
           const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.password),
+            title: const Text('Change admin password'),
+            subtitle: const Text('Required to change any gateway setting.'),
+            onTap: () => _changePassword(context),
+          ),
           const Divider(),
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -56,6 +63,17 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _changePassword(BuildContext context) async {
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (_) => const ChangePasswordDialog(),
+    );
+    if (changed == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Admin password changed')));
+    }
   }
 
   Future<void> _clearSynced(BuildContext context, WidgetRef ref) async {

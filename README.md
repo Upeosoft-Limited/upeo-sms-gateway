@@ -317,9 +317,27 @@ storeFile=upeo-sms-gateway.jks
 3. **Test Connection** — sends a signed heartbeat handshake; a green result proves URL
    + Device ID + secret + signing all line up.
 4. **Save** — the foreground service starts automatically.
-5. **Reliability screen** — exempt from battery optimization + open the OEM
+5. **Create the admin password** — asked for once, right after the first save
+   (and on first launch after upgrading an already-configured phone).
+6. **Reliability screen** — exempt from battery optimization + open the OEM
    autostart / protected-apps screen (per-manufacturer guidance is shown). **This step
    is what keeps the gateway alive long-term** — don't skip it.
+
+### Admin password
+
+Once the gateway is configured, **any change to its settings needs the admin
+password**: the device secret, Device ID, API URL, allowlist, retention, and the
+HTTP switch. Any of those, changed by mistake, stops sync. Re-saving unchanged
+values (e.g. Test Connection) does not ask. Change the password under
+**Settings → Change admin password** (the current one is required).
+
+It is stored only as a salted PBKDF2-SHA256 hash in the Keystore-backed secure
+storage. Five wrong attempts lock it for 5 minutes, surviving app restarts. It is
+local to the phone; the backend never sees it, and background sync never needs it.
+
+**Forgotten password:** clear the app's data (Android Settings → Apps → UPEO SMS
+Gateway → Storage → Clear data) and set the gateway up again. This also clears
+the on-device queue, so let pending messages sync first.
 
 ---
 
@@ -387,6 +405,7 @@ That's a policy constraint, not a technical one — the app is fully production-
 | SMS captured but **not sent** | Offline (queued — will drain), or battery optimization killed the service → do the Reliability steps. |
 | Service dies overnight | OEM autostart not enabled / battery not exempted (Xiaomi, Oppo, Vivo, Samsung are common offenders). |
 | Duplicate payments | Backend not deduping on `message_hash`/`nonce`. |
+| Forgot the admin password | Clear the app's data and set up again (see [Admin password](#admin-password)). |
 
 ---
 

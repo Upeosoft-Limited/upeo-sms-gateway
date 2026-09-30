@@ -7,8 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/app_config.dart';
 import '../../services/api_client.dart';
+import '../../state/auth_providers.dart';
 import '../../state/gateway_actions.dart';
 import '../../state/providers.dart';
+import 'admin_password_dialog.dart';
 
 /// Reusable editor for the gateway configuration, used by both Setup and
 /// Settings. Includes Save and Test Connection (a signed heartbeat handshake).
@@ -79,7 +81,7 @@ class _ConfigFormState extends ConsumerState<ConfigForm> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _busy = true);
     try {
-      await ref.read(configControllerProvider.notifier).save(_collect());
+      if (!await _persist()) return;
       if (mounted) {
         _snack('Configuration saved');
         widget.onSaved?.call();
@@ -94,7 +96,7 @@ class _ConfigFormState extends ConsumerState<ConfigForm> {
     setState(() => _busy = true);
     try {
       // Persist first so the heartbeat uses the latest values.
-      await ref.read(configControllerProvider.notifier).save(_collect());
+      if (!await _persist()) return;
       final res = await ref.read(gatewayActionsProvider).testConnection();
       if (!mounted) return;
       final ok = res.outcome == SendOutcome.success;
@@ -105,6 +107,28 @@ class _ConfigFormState extends ConsumerState<ConfigForm> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// Saves the form, first asking for the admin password when the change
+  /// needs it. Returns false (nothing saved) if the password was not given.
+  Future<bool> _persist() async {
+    final edited = _collect();
+    final saved = await ref.read(configControllerProvider.future);
+    final needsPassword = ref
+        .read(configChangePolicyProvider)
+        .requiresPassword(saved: saved, edited: edited);
+    if (needsPassword) {
+      if (!mounted) return false;
+      final ok = await confirmAdminPassword(context,
+          reason: 'Changing the gateway settings can stop sync. Enter the '
+              'admin password to save these changes.');
+      if (!ok) {
+        if (mounted) _snack('Changes not saved', error: true);
+        return false;
+      }
+    }
+    await ref.read(configControllerProvider.notifier).save(edited);
+    return true;
   }
 
   /// Generate a strong random secret. You must register the SAME value on the
