@@ -35,6 +35,19 @@ The general rules in `~/projects/CLAUDE.md` apply; this file adds specifics.
   fake `AdminAuthRepository.verify` there, test the real one in unit tests.
 - `FlutterSecureStorage.setMockInitialValues` backs storage in tests.
 
+## Release signing
+
+- Every release must be signed with `~/keys/upeo-sms-gateway-release.jks`
+  (alias `upeo`, CN=Upeo Soft, cert SHA-256 `229235bd…6e325e`), created
+  2026-09-30 for 1.0.6. Passwords live only in `android/key.properties`
+  (gitignored). Android refuses an update signed with any other key.
+- Without `key.properties` the build silently falls back to the debug key.
+  Before shipping, check the signer:
+  `apksigner verify --print-certs app-release.apk` (needs JDK 21 on PATH).
+- Trap: the key that signed 1.0.0–1.0.5 was lost when the laptop was
+  formatted, so 1.0.6 needed a one-time uninstall/reinstall on every phone.
+  Keep off-machine backups of the keystore and its passwords.
+
 ## Deploy
 
 Not yet recorded. Ask the owner how releases are shipped (APK host / version
