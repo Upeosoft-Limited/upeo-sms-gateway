@@ -55,5 +55,16 @@ The general rules in `~/projects/CLAUDE.md` apply; this file adds specifics.
 
 ## Deploy
 
-Not yet recorded. Ask the owner how releases are shipped (APK host / version
-feed at `/api/app/version`) and write it here.
+Releases are shipped as an APK at a stable URL (first done for 1.0.7, 2026-10-06):
+
+1. Check the signer (see Release signing) and `versionName` of the release APK.
+2. On the droplet (`root@64.227.184.94`), in
+   `/home/frappe/frappe-bench/sites/demo.upeoretail.com/public/files/`: copy
+   the live `upeo-sms-gateway.apk` to `upeo-sms-gateway-<old>-backup.apk`,
+   upload the new one as a dot-file, check its md5, `chown frappe:frappe`,
+   then `mv` it over `upeo-sms-gateway.apk`. Rollback = move the backup back.
+   The upload of ~70 MB takes 15+ minutes; run it in the background.
+3. Bump `version` for UPEO SMS Gateway in `appDownloads` in the UpeoRetail
+   website (`upeoretail/website/lib/site.ts`), push `main` (Vercel deploys).
+4. Set `gateway_app_version` in demo's Upeo Retail Settings (the
+   `/api/app/version` feed). Only demo has the feed set.
